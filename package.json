@@ -11,7 +11,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^3.0.0",
     "@tailwindcss/postcss": "latest",
+    "@xyflow/react": "^12.11.2",
     "idb": "latest",
     "lucide-react": "latest",
     "next": "latest",

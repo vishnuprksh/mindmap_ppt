@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { AlignLeft, ChevronLeft, ChevronRight, CircleHelp, Download, ImagePlus, LayoutDashboard, ListTree, Map, Maximize2, MonitorPlay, Moon, MoreHorizontal, PanelLeftClose, PanelRightClose, Plus, Redo2, Route, Save, Sparkles, Undo2 } from "lucide-react";
+import { AlignLeft, ChevronLeft, ChevronRight, CircleHelp, Download, ImagePlus, LayoutDashboard, ListTree, Map, Maximize2, MonitorPlay, Moon, MoreHorizontal, PanelLeftClose, PanelRightClose, Plus, Redo2, Route, Save, Sparkles, Trash2, Undo2, UnfoldVertical } from "lucide-react";
 import { countPresentationSlides } from "@/domain/project";
 import { themes } from "@/domain/theme";
 import { useProjectPersistence } from "@/hooks/use-project-persistence";
 import { useProjectStore } from "@/store/project-store";
 import { IconButton } from "@/components/common/icon-button";
 import { OutlineTree } from "@/components/outline/outline-tree";
-import { MapPlaceholder } from "@/components/canvas/map-placeholder";
+import { MindMapCanvas } from "@/components/canvas/mind-map-canvas";
 
 export function Workspace() {
   useProjectPersistence();
@@ -29,11 +29,11 @@ export function Workspace() {
           <IconButton icon={Redo2} label="Redo" shortcut="Ctrl+Shift+Z" disabled={!store.future.length} onClick={store.redo} />
         </div>
         <span className="toolbar-divider" />
-        <div className="toolbar-group future-controls" aria-label="Canvas tools coming in Phase 2">
-          <IconButton icon={Plus} label="Add node — available in Phase 2" disabled />
-          <IconButton icon={ListTree} label="Add child — available in Phase 2" disabled />
+        <div className="toolbar-group future-controls" aria-label="Canvas tools">
+          <IconButton icon={Plus} label="Add sibling" shortcut="Enter" disabled={!selectedNode?.parentId} onClick={() => store.addSibling()} />
+          <IconButton icon={ListTree} label="Add child" shortcut="Tab" disabled={!selectedNode} onClick={() => store.addChild()} />
           <IconButton icon={ImagePlus} label="Add image — available in Phase 3" disabled />
-          <IconButton icon={Sparkles} label="Auto layout — available in Phase 2" disabled />
+          <IconButton icon={Sparkles} label="Auto layout" onClick={() => store.autoLayout("horizontal")} />
         </div>
         <div className="mode-switch" aria-label="Workspace mode">
           <button type="button" data-active={store.mode === "map" || undefined} onClick={() => store.setMode("map")}><Map size={15} /> Map</button>
@@ -55,8 +55,8 @@ export function Workspace() {
         </aside>}
 
         <section className="main-workspace">
-          <div className="canvas-chrome"><span><span className="live-dot" /> Map foundation</span><span>Canvas interactions arrive in Phase 2</span></div>
-          <MapPlaceholder project={store.project} selectedId={selectedId} onSelect={store.selectNode} />
+          <div className="canvas-chrome"><span><span className="live-dot" /> Mind map</span><span>Drag to move · connect handles to reparent · double-click to rename</span></div>
+          <MindMapCanvas />
           {!store.leftPanelOpen && <button className="panel-reveal left" type="button" aria-label="Show outline" onClick={store.toggleLeftPanel}><ChevronRight size={16} /></button>}
           {!store.rightPanelOpen && <button className="panel-reveal right" type="button" aria-label="Show properties" onClick={store.toggleRightPanel}><ChevronLeft size={16} /></button>}
         </section>
@@ -67,8 +67,14 @@ export function Workspace() {
             <div className="selection-label"><span className="selection-swatch" /> Slide {store.project.presentationOrder.indexOf(selectedNode.id) + 1}</div>
             <label>Title<input key={selectedNode.id + selectedNode.title} defaultValue={selectedNode.title} onBlur={(event) => store.renameNode(selectedNode.id, event.target.value)} /></label>
             <label>Layout<select value={selectedNode.slide.layout} disabled aria-label="Slide layout"><option>{selectedNode.slide.layout.replaceAll("-", " ")}</option></select></label>
+            <div className="property-section"><span>Map node</span>
+              <button type="button" disabled={!selectedNode.childIds.length} onClick={() => store.toggleCollapsed(selectedNode.id)}><UnfoldVertical size={15} /> {selectedNode.isCollapsed ? "Expand branch" : "Collapse branch"}</button>
+              <button type="button" disabled={!selectedNode.parentId} onClick={store.duplicateSelected}><Plus size={15} /> Duplicate branch</button>
+              <button className="danger-action" type="button" onClick={store.deleteSelected}><Trash2 size={15} /> Delete selection</button>
+            </div>
+            <div className="property-section"><span>Auto layout</span><div className="layout-buttons"><button type="button" onClick={() => store.autoLayout("horizontal")}>Horizontal</button><button type="button" onClick={() => store.autoLayout("vertical")}>Vertical</button><button type="button" onClick={() => store.autoLayout("radial")}>Radial</button></div></div>
             <div className="property-section"><span>Appearance</span><button type="button" disabled><span className="color-chip" /> Theme background</button><button type="button" disabled><AlignLeft size={15} /> {selectedNode.slide.textAlignment ?? "left"} aligned</button></div>
-            <p className="phase-note">Slide layout and appearance controls unlock in Phase 3.</p>
+            <p className="phase-note">Slide appearance controls unlock in Phase 3.</p>
           </div> : <p className="empty-copy">Select a node to view its properties.</p>}
         </aside>}
       </section>
@@ -78,8 +84,8 @@ export function Workspace() {
         <span>{Object.keys(store.project.nodes).length} nodes</span><span>{countPresentationSlides(store.project)} slides</span><span className="status-mode"><Map size={12} /> Map mode</span>
         <span className="status-spacer" />
         {store.persistenceError && <span className="save-error" title={store.persistenceError}>Local save unavailable</span>}
-        <button type="button" disabled title="Keyboard shortcuts arrive in Phase 2"><CircleHelp size={13} /> Shortcuts</button>
-        <span>100%</span><IconButton icon={Moon} label="Theme selector — available in Phase 3" disabled /><IconButton icon={Maximize2} label="Fit view — available in Phase 2" disabled />
+        <button type="button" title="Enter sibling · Tab child · F2 rename · Delete remove · Ctrl/Cmd+D duplicate · Ctrl/Cmd+Z undo"><CircleHelp size={13} /> Shortcuts</button>
+        <span>25–200%</span><IconButton icon={Moon} label="Theme selector — available in Phase 3" disabled /><IconButton icon={Maximize2} label="Fit view" onClick={() => window.dispatchEvent(new Event("mindmap:fit"))} />
       </footer>
     </main>
   );
